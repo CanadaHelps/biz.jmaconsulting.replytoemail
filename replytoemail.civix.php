@@ -75,6 +75,29 @@ class CRM_Replytoemail_ExtensionUtil {
     return self::CLASS_PREFIX . '_' . str_replace('\\', '_', $suffix);
   }
 
+  function getUsersByRole($role) {
+    $query = db_select('users', 'u');
+    $query->fields('u', array('uid'));
+    $query->innerJoin('users_roles', 'ur', 'ur.uid = u.uid');
+    $query->innerJoin('role', 'r', 'r.rid = ur.rid');
+    $query->condition('r.name', $role);
+
+    $result = $query->execute();
+
+    $users = [];
+    foreach ($result as $user) {
+      $contact = civicrm_api3('UFMatch', 'get', [
+        'sequential' => 1,
+        'return' => ["contact_id"],
+        'uf_id' => $user->uid,
+      ]);
+      if (!empty($contact['values'][0]['contact_id'])) {
+        $users[] = $contact['values'][0]['contact_id'];
+      }
+    }
+    return $users;
+  }
+
 }
 
 use CRM_Replytoemail_ExtensionUtil as E;
